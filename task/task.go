@@ -78,7 +78,6 @@ func (d *Docker) Run() DockerResult {
 	ctx := context.Background()
 
 	reader, err := d.Client.ImagePull(ctx, d.Config.Image, image.PullOptions{})
-
 	if err != nil {
 		log.Printf("Error pulling image %s: %v\n", d.Config.Image, err)
 		return DockerResult{Error: err}
@@ -120,6 +119,7 @@ func (d *Docker) Run() DockerResult {
 		return DockerResult{Error: err}
 	}
 
+	//TODO:  Do we need this?
 	//d.Config.Runtime.ContainerID = resp.ID
 
 	out, err := d.Client.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
@@ -130,4 +130,26 @@ func (d *Docker) Run() DockerResult {
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return DockerResult{ContainerId: resp.ID, Action: "start", Result: "success"}
+}
+
+func (d *Docker) Stop(id string) DockerResult {
+	log.Printf("Attempting to stop container %v", id)
+	ctx := context.Background()
+	err := d.Client.ContainerStop(ctx, id, container.StopOptions{})
+	if err != nil {
+		log.Printf("Error stopping container %s: %v\n", id, err)
+		return DockerResult{Error: err}
+	}
+
+	err = d.Client.ContainerRemove(ctx, id, container.RemoveOptions{
+		RemoveVolumes: true,
+		RemoveLinks:   false,
+		Force:         false,
+	})
+	if err != nil {
+		log.Printf("Error removing container %s: %v\n", id, err)
+		return DockerResult{Error: err}
+	}
+
+	return DockerResult{Action: "stop", Result: "success", Error: nil}
 }

@@ -1,6 +1,6 @@
 module cube
 
-go 1.23.6
+go 1.23.4
 
 require (
 	github.com/docker/docker v27.5.1+incompatible
